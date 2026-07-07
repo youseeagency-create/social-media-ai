@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(npm run *)",
+      "PowerShell(npx tsc --noEmit -p tsconfig.json 2>&1 | Select-Object -First 60)",
+      "PowerShell(\\(Get-Content \"C:\\\\Users\\\\Umaiy\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Umaiy-Downloads-social-media-main-social-media-main\\\\623c3ab3-1e02-4165-a2a6-20d209761577\\\\tasks\\\\bovnuw480.output\" | Measure-Object -Line\\).Lines)",
+      "PowerShell(& \"C:\\\\Program Files \\(x86\\)\\\\cloudflared\\\\cloudflared.exe\" tunnel --url http://localhost:3000)"
+    ]
+  }
+}
