@@ -31,6 +31,9 @@ export const users = pgTable(
 export const workspaces = pgTable("workspaces", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
+  // When set, the workspace is archived (deactivated): hidden from the admin's
+  // active list and from clients entirely, but its data is preserved.
+  archivedAt: timestamp("archived_at", { mode: "string" }),
   createdAt,
 });
 
@@ -64,6 +67,8 @@ export const inspirationItems = pgTable(
     thumbnailStatus: text("thumbnail_status", { enum: ["pending", "ready", "failed", "none"] })
       .notNull()
       .default("none"),
+    // Size of the stored thumbnail blob, for the admin storage dashboard.
+    sizeBytes: bigint("size_bytes", { mode: "number" }),
     createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
     createdAt,
   },
@@ -88,6 +93,8 @@ export const notes = pgTable(
     body: text("body"),
     audioUrl: text("audio_url"),
     audioDurationSeconds: integer("audio_duration_seconds"),
+    // Size of the stored voice-note audio blob, for the admin storage dashboard.
+    sizeBytes: bigint("size_bytes", { mode: "number" }),
     createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
     createdAt,
   },
@@ -150,6 +157,47 @@ export const calendarItems = pgTable(
   (t) => [check("calendar_status_check", sql`${t.status} in ('planned', 'filming', 'posted')`)]
 );
 
+// Per-workspace chat: one shared thread per workspace, visible to the admin and
+// every client assigned to that workspace.
+export const messages = pgTable("messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspaces.id, { onDelete: "cascade" }),
+  senderId: uuid("sender_id").references(() => users.id, { onDelete: "set null" }),
+  body: text("body").notNull(),
+  createdAt,
+});
+
+// Admin-only private notes about a client/workspace. Never exposed to clients.
+export const adminNotes = pgTable("admin_notes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspaces.id, { onDelete: "cascade" }),
+  body: text("body").notNull(),
+  createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt,
+});
+
+// Per-user, per-workspace, per-section "last seen" marker driving the unseen
+// activity badges. section ∈ inspiration | notes | footage | calendar | chat.
+export const notificationReads = pgTable(
+  "notification_reads",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    section: text("section").notNull(),
+    lastSeenAt: timestamp("last_seen_at", { mode: "string" }).notNull().defaultNow(),
+  },
+  (t) => [unique().on(t.userId, t.workspaceId, t.section)]
+);
+
 export type User = typeof users.$inferSelect;
 export type Workspace = typeof workspaces.$inferSelect;
 export type WorkspaceClient = typeof workspaceClients.$inferSelect;
@@ -158,3 +206,6 @@ export type Note = typeof notes.$inferSelect;
 export type Footage = typeof footage.$inferSelect;
 export type Analysis = typeof analyses.$inferSelect;
 export type CalendarItem = typeof calendarItems.$inferSelect;
+export type Message = typeof messages.$inferSelect;
+export type AdminNote = typeof adminNotes.$inferSelect;
+export type NotificationRead = typeof notificationReads.$inferSelect;

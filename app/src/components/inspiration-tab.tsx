@@ -22,9 +22,9 @@ const platformMeta: Record<
   InspirationItem["platform"],
   { label: string; icon: typeof LinkIcon; chip: string }
 > = {
-  instagram: { label: "Instagram", icon: Instagram, chip: "bg-pink-500/15 text-pink-300 border-pink-500/20" },
-  tiktok: { label: "TikTok", icon: Music2, chip: "bg-cyan-500/15 text-cyan-300 border-cyan-500/20" },
-  youtube: { label: "YouTube", icon: Youtube, chip: "bg-red-500/15 text-red-300 border-red-500/20" },
+  instagram: { label: "Instagram", icon: Instagram, chip: "bg-neutral-500/15 text-neutral-300 border-neutral-500/20" },
+  tiktok: { label: "TikTok", icon: Music2, chip: "bg-neutral-500/15 text-neutral-300 border-neutral-500/20" },
+  youtube: { label: "YouTube", icon: Youtube, chip: "bg-neutral-500/15 text-neutral-300 border-neutral-500/20" },
   other: { label: "Link", icon: LinkIcon, chip: "bg-white/[0.06] text-muted-foreground border-white/[0.08]" },
 };
 
@@ -115,7 +115,7 @@ export function InspirationTab({ workspaceId }: { workspaceId: string }) {
         <Button
           type="submit"
           disabled={saving}
-          className="h-11 rounded-xl gap-1.5 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 border-0"
+          className="h-11 rounded-xl gap-1.5 bg-neutral-900 text-white hover:bg-neutral-800 border-0"
         >
           <Plus className="h-4 w-4" />
           {saving ? "Adding…" : "Add"}

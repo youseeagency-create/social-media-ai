@@ -50,6 +50,20 @@
       "when": 1783530294919,
       "tag": "0006_mature_sharon_ventura",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1783545274711,
+      "tag": "0007_parched_annihilus",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1783546937954,
+      "tag": "0008_chemical_sunset_bain",
+      "breakpoints": true
     }
   ]
 }

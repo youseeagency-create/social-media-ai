@@ -236,7 +236,7 @@ function VideosContent() {
                       className="shrink-0 ml-1.5 transition-colors"
                     >
                       <Star
-                        className={`h-4 w-4 ${video.starred ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/40 hover:text-yellow-400/60"}`}
+                        className={`h-4 w-4 ${video.starred ? "fill-neutral-400 text-neutral-400" : "text-muted-foreground/40 hover:text-neutral-400/60"}`}
                       />
                     </button>
                   </div>
@@ -328,7 +328,7 @@ function VideosContent() {
                       href={modalVideo.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-purple-400 transition-colors"
+                      className="text-muted-foreground hover:text-neutral-900 transition-colors"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
                     </a>
@@ -356,7 +356,7 @@ function VideosContent() {
                     onClick={() => setModalSection("analysis")}
                     className={`rounded-xl text-xs h-8 gap-1.5 transition-all duration-200 ${
                       modalSection === "analysis"
-                        ? "bg-purple-500/15 text-purple-300 border border-purple-500/20"
+                        ? "bg-neutral-900/[0.06] text-neutral-700 border border-neutral-900/10"
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
@@ -369,7 +369,7 @@ function VideosContent() {
                     onClick={() => setModalSection("concepts")}
                     className={`rounded-xl text-xs h-8 gap-1.5 transition-all duration-200 ${
                       modalSection === "concepts"
-                        ? "bg-indigo-500/15 text-indigo-300 border border-indigo-500/20"
+                        ? "bg-neutral-900/[0.06] text-neutral-700 border border-neutral-900/10"
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >

@@ -93,7 +93,7 @@ export function ReportsTab({ workspaceId }: { workspaceId: string }) {
         <Button
           onClick={generate}
           disabled={loading}
-          className="h-11 gap-1.5 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 border-0"
+          className="h-11 gap-1.5 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 border-0"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
           {loading ? "Generating…" : "Generate report"}
@@ -110,7 +110,7 @@ export function ReportsTab({ workspaceId }: { workspaceId: string }) {
       </div>
       {error && <p className="no-print text-sm text-red-400">{error}</p>}
       {report && summaryError && (
-        <p className="no-print text-xs text-amber-400/80">{summaryError} The report below is still complete.</p>
+        <p className="no-print text-xs text-neutral-400/80">{summaryError} The report below is still complete.</p>
       )}
 
       {!report && !loading && (
@@ -138,8 +138,8 @@ export function ReportsTab({ workspaceId }: { workspaceId: string }) {
           </div>
 
           {summary && (
-            <div className="mt-5 rounded-xl border border-purple-200 bg-purple-50 p-4">
-              <p className="mb-1 inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-purple-700">
+            <div className="mt-5 rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+              <p className="mb-1 inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-neutral-700">
                 <Sparkles className="h-3 w-3" /> Summary
               </p>
               <p className="whitespace-pre-wrap text-sm leading-relaxed text-neutral-700">{summary}</p>

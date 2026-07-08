@@ -10,6 +10,7 @@ const ADMIN_ONLY_API_PREFIXES = [
   "/api/workspaces",
   "/api/users",
   "/api/workspace-clients",
+  "/api/admin",
 ];
 
 function isAdminOnlyPage(pathname: string): boolean {
@@ -56,5 +57,6 @@ export const config = {
     "/api/workspaces/:path*",
     "/api/users/:path*",
     "/api/workspace-clients/:path*",
+    "/api/admin/:path*",
   ],
 };

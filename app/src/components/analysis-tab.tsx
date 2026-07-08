@@ -136,7 +136,7 @@ export function AnalysisTab({ workspaceId }: { workspaceId: string }) {
       {/* Composer */}
       <div className="glass space-y-4 rounded-2xl p-5">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-purple-400" />
+          <Sparkles className="h-4 w-4 text-neutral-600" />
           <h2 className="text-sm font-semibold">Analyze a video</h2>
         </div>
 
@@ -200,7 +200,7 @@ export function AnalysisTab({ workspaceId }: { workspaceId: string }) {
         {uploadPct !== null && (
           <div className="h-1 overflow-hidden rounded-full bg-white/[0.08]">
             <div
-              className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 transition-all"
+              className="h-full bg-neutral-900 transition-all"
               style={{ width: `${uploadPct}%` }}
             />
           </div>
@@ -242,7 +242,7 @@ export function AnalysisTab({ workspaceId }: { workspaceId: string }) {
           <Button
             onClick={submit}
             disabled={submitting}
-            className="h-10 gap-1.5 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 border-0"
+            className="h-10 gap-1.5 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 border-0"
           >
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
             {submitting ? (uploadPct !== null ? `Uploading ${Math.round(uploadPct)}%` : "Starting…") : "Analyze video"}
@@ -317,7 +317,7 @@ export function AnalysisTab({ workspaceId }: { workspaceId: string }) {
                     {a.status === "completed" && (
                       <button
                         onClick={() => setExpanded((p) => ({ ...p, [a.id]: !open }))}
-                        className="mt-3 inline-flex items-center gap-1 text-xs text-purple-300 hover:text-purple-200"
+                        className="mt-3 inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-700"
                       >
                         <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
                         {open ? "Hide results" : "View analysis & content ideas"}
@@ -329,13 +329,13 @@ export function AnalysisTab({ workspaceId }: { workspaceId: string }) {
                 {a.status === "completed" && open && (
                   <div className="grid gap-5 border-t border-white/[0.06] p-5 lg:grid-cols-2">
                     <div>
-                      <h4 className="mb-2 text-[11px] font-medium uppercase tracking-wider text-purple-400">
+                      <h4 className="mb-2 text-[11px] font-medium uppercase tracking-wider text-neutral-600">
                         Video analysis
                       </h4>
                       <MarkdownContent content={a.analysisText || ""} variant="analysis" />
                     </div>
                     <div>
-                      <h4 className="mb-2 text-[11px] font-medium uppercase tracking-wider text-indigo-400">
+                      <h4 className="mb-2 text-[11px] font-medium uppercase tracking-wider text-neutral-600">
                         Content ideas
                       </h4>
                       <MarkdownContent content={a.ideasText || ""} variant="concepts" />

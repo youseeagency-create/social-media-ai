@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { VoiceRecorder, type RecordedAudio } from "@/components/voice-recorder";
-import { FileText, Mic, Trash2, StickyNote } from "lucide-react";
+import { FileText, Mic, Trash2, StickyNote, Download } from "lucide-react";
 import { formatDateTime } from "@/lib/dates";
 import type { Note } from "@/lib/types";
 
@@ -78,6 +78,7 @@ export function NotesTab({ workspaceId }: { workspaceId: string }) {
         kind: "voice",
         audioUrl: blob.url,
         audioDurationSeconds: recording.durationSeconds,
+        sizeBytes: recording.blob.size,
       });
     } catch (e) {
       setError((e as Error).message || "Upload failed");
@@ -91,8 +92,41 @@ export function NotesTab({ workspaceId }: { workspaceId: string }) {
     await fetch(`/api/notes?id=${id}`, { method: "DELETE" });
   };
 
+  // Export all notes as a Markdown file (voice notes included as audio links).
+  const exportNotes = () => {
+    const body = notes
+      .slice()
+      .reverse()
+      .map((n) => {
+        const heading = `## ${n.title || (n.kind === "voice" ? "Voice note" : "Note")} — ${formatDateTime(n.createdAt)}`;
+        const content = n.kind === "voice" ? `Audio: ${n.audioUrl ?? "(missing)"}` : n.body ?? "";
+        return `${heading}\n\n${content}\n`;
+      })
+      .join("\n");
+    const md = `# Notes export\n\n${body}`;
+    const url = URL.createObjectURL(new Blob([md], { type: "text/markdown" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "notes.md";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-neutral-500">Notes</h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={exportNotes}
+          disabled={notes.length === 0}
+          className="gap-1.5 rounded-xl border-neutral-300"
+        >
+          <Download className="h-3.5 w-3.5" /> Export
+        </Button>
+      </div>
+
       {/* Composer */}
       <div className="glass rounded-2xl p-4 space-y-3">
         <div className="flex gap-1.5">
@@ -134,7 +168,7 @@ export function NotesTab({ workspaceId }: { workspaceId: string }) {
               <Button
                 onClick={handleSaveText}
                 disabled={saving || !body.trim()}
-                className="h-10 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 border-0"
+                className="h-10 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 border-0"
               >
                 {saving ? "Saving…" : "Save note"}
               </Button>
@@ -148,7 +182,7 @@ export function NotesTab({ workspaceId }: { workspaceId: string }) {
                 <Button
                   onClick={handleSaveVoice}
                   disabled={saving}
-                  className="h-10 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 border-0"
+                  className="h-10 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 border-0"
                 >
                   {saving ? "Uploading…" : "Save voice note"}
                 </Button>

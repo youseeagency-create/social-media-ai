@@ -37,6 +37,7 @@ export async function POST(request: Request) {
     audioUrl: body.kind === "voice" ? body.audioUrl : null,
     audioDurationSeconds:
       typeof body.audioDurationSeconds === "number" ? Math.round(body.audioDurationSeconds) : null,
+    sizeBytes: typeof body.sizeBytes === "number" ? Math.round(body.sizeBytes) : null,
     createdBy: user.id,
   });
   return NextResponse.json(note, { status: 201 });

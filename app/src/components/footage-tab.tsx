@@ -100,7 +100,7 @@ export function FootageTab({ workspaceId }: { workspaceId: string }) {
         }}
         onClick={() => inputRef.current?.click()}
         className={`glass flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-10 text-center transition-colors ${
-          dragging ? "border-purple-400/60 bg-purple-500/[0.06]" : "border-white/[0.1]"
+          dragging ? "border-neutral-400 bg-neutral-100" : "border-white/[0.1]"
         }`}
       >
         <Upload className="h-7 w-7 text-muted-foreground/50" />
@@ -135,7 +135,7 @@ export function FootageTab({ workspaceId }: { workspaceId: string }) {
               {!u.error && (
                 <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/[0.08]">
                   <div
-                    className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 transition-all"
+                    className="h-full bg-neutral-900 transition-all"
                     style={{ width: `${u.progress}%` }}
                   />
                 </div>

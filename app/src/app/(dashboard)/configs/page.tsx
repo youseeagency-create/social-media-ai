@@ -93,7 +93,7 @@ export default function ConfigsPage() {
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={openNew} className="rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 border-0 gap-1.5">
+            <Button onClick={openNew} className="rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 border-0 gap-1.5">
               <Plus className="h-4 w-4" />
               New Config
             </Button>
@@ -123,7 +123,7 @@ export default function ConfigsPage() {
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
-                  <Search className="h-3 w-3 text-purple-400" />
+                  <Search className="h-3 w-3 text-neutral-600" />
                   Analysis Instruction (Gemini prompt)
                 </Label>
                 <Textarea
@@ -136,7 +136,7 @@ export default function ConfigsPage() {
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
-                  <Sparkles className="h-3 w-3 text-indigo-400" />
+                  <Sparkles className="h-3 w-3 text-neutral-600" />
                   New Concepts Instruction (Claude prompt)
                 </Label>
                 <Textarea
@@ -149,7 +149,7 @@ export default function ConfigsPage() {
               </div>
               <Button
                 onClick={handleSave}
-                className="w-full rounded-xl h-11 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 border-0"
+                className="w-full rounded-xl h-11 bg-neutral-900 text-white hover:bg-neutral-800 border-0"
               >
                 {editing ? "Save Changes" : "Create Config"}
               </Button>
@@ -168,8 +168,8 @@ export default function ConfigsPage() {
             <div key={config.id} className="glass rounded-2xl p-5 transition-all duration-300 hover:bg-white/[0.05] hover:border-white/[0.1]">
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500/20 to-indigo-500/20 border border-purple-500/20">
-                    <Settings2 className="h-4 w-4 text-purple-400" />
+                  <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-neutral-100 border border-neutral-200">
+                    <Settings2 className="h-4 w-4 text-neutral-600" />
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold">{config.configName}</h3>
@@ -209,13 +209,13 @@ export default function ConfigsPage() {
               </div>
               <div className="mt-4 grid gap-3 md:grid-cols-2">
                 <div className="rounded-xl bg-black/20 border border-white/[0.04] p-3">
-                  <p className="text-[10px] font-medium text-purple-400 uppercase tracking-wider mb-1.5">Analysis Prompt</p>
+                  <p className="text-[10px] font-medium text-neutral-600 uppercase tracking-wider mb-1.5">Analysis Prompt</p>
                   <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
                     {config.analysisInstruction}
                   </p>
                 </div>
                 <div className="rounded-xl bg-black/20 border border-white/[0.04] p-3">
-                  <p className="text-[10px] font-medium text-indigo-400 uppercase tracking-wider mb-1.5">Concepts Prompt</p>
+                  <p className="text-[10px] font-medium text-neutral-600 uppercase tracking-wider mb-1.5">Concepts Prompt</p>
                   <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
                     {config.newConceptsInstruction}
                   </p>

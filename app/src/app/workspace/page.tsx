@@ -13,7 +13,7 @@ export default async function WorkspacePickerPage() {
   const workspaces = await listWorkspacesForUser(user.id);
 
   if (workspaces.length === 1) {
-    redirect(`/workspace/${workspaces[0].id}/inspiration`);
+    redirect(`/workspace/${workspaces[0].id}/home`);
   }
 
   return (
@@ -33,10 +33,10 @@ export default async function WorkspacePickerPage() {
           {workspaces.map((w) => (
             <li key={w.id}>
               <Link
-                href={`/workspace/${w.id}/inspiration`}
+                href={`/workspace/${w.id}/home`}
                 className="glass flex items-center gap-3 rounded-xl p-4 hover:bg-white/[0.05]"
               >
-                <Building2 className="h-4 w-4 text-purple-400" />
+                <Building2 className="h-4 w-4 text-neutral-600" />
                 <span className="text-sm font-medium">{w.name}</span>
               </Link>
             </li>

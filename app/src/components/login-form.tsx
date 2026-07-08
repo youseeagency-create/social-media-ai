@@ -41,8 +41,8 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-sm glass-strong rounded-2xl border-white/[0.08] p-8">
       <div className="mb-6 flex flex-col items-center gap-2 text-center">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500/20 to-indigo-500/20 border border-purple-500/20">
-          <Lock className="h-4 w-4 text-purple-400" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-100 border border-neutral-200">
+          <Lock className="h-4 w-4 text-neutral-600" />
         </div>
         <h1 className="text-lg font-semibold">Sign in</h1>
         <p className="text-sm text-muted-foreground">Access your workspace</p>
@@ -76,7 +76,7 @@ export function LoginForm() {
         <Button
           type="submit"
           disabled={loading}
-          className="w-full rounded-xl h-11 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 border-0"
+          className="w-full rounded-xl h-11 bg-neutral-900 text-white hover:bg-neutral-800 border-0"
         >
           {loading ? "Signing in..." : "Sign in"}
         </Button>

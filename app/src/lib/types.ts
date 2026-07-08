@@ -7,9 +7,16 @@ import type {
   Footage,
   Analysis,
   CalendarItem,
+  Message,
+  AdminNote,
+  NotificationRead,
 } from "./schema";
 
-export type { User, Workspace, WorkspaceClient, InspirationItem, Note, Footage, Analysis, CalendarItem };
+export type { User, Workspace, WorkspaceClient, InspirationItem, Note, Footage, Analysis, CalendarItem, Message, AdminNote, NotificationRead };
+
+// A chat message joined with its sender's display name/role (null if the sender
+// account was deleted). Safe to import from client components (type-only).
+export type ChatMessage = Message & { senderName: string | null; senderRole: UserRole | null };
 
 export interface Config {
   id: string;

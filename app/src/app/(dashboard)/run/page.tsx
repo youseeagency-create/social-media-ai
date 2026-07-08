@@ -66,7 +66,7 @@ export default function RunPage() {
       {/* Config Form */}
       <div className="glass rounded-2xl p-6 space-y-6">
         <div className="flex items-center gap-2">
-          <Zap className="h-4 w-4 text-purple-400" />
+          <Zap className="h-4 w-4 text-neutral-600" />
           <h2 className="text-sm font-semibold">Pipeline Configuration</h2>
         </div>
 
@@ -135,7 +135,7 @@ export default function RunPage() {
             onClick={handleRun}
             disabled={running || !selectedConfig}
             size="lg"
-            className="w-full rounded-xl h-12 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 border-0 glow-sm transition-all duration-300 hover:glow text-sm font-semibold"
+            className="w-full rounded-xl h-12 bg-neutral-900 text-white hover:bg-neutral-800 border-0 glow-sm transition-all duration-300 hover:glow text-sm font-semibold"
           >
             {running ? (
               <>
@@ -159,8 +159,8 @@ export default function RunPage() {
           <div className="glass rounded-2xl p-6 space-y-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                {progress.status === "running" && <Loader2 className="h-4 w-4 text-purple-400 animate-spin" />}
-                {progress.status === "completed" && <CheckCircle2 className="h-4 w-4 text-emerald-400" />}
+                {progress.status === "running" && <Loader2 className="h-4 w-4 text-neutral-600 animate-spin" />}
+                {progress.status === "completed" && <CheckCircle2 className="h-4 w-4 text-neutral-400" />}
                 {progress.status === "error" && <XCircle className="h-4 w-4 text-red-400" />}
                 <h2 className="text-sm font-semibold">
                   {progress.status === "running" && progress.phase === "scraping" && "Scraping creators..."}
@@ -191,10 +191,10 @@ export default function RunPage() {
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${
                     progress.status === "completed"
-                      ? "bg-gradient-to-r from-emerald-500 to-teal-500"
+                      ? "bg-neutral-900"
                       : progress.status === "error"
-                      ? "bg-gradient-to-r from-red-500 to-orange-500"
-                      : "bg-gradient-to-r from-purple-500 to-indigo-500"
+                      ? "bg-neutral-400"
+                      : "bg-neutral-900"
                   }`}
                   style={{ width: `${progress.status === "completed" ? 100 : totalProgress}%` }}
                 />
@@ -209,7 +209,7 @@ export default function RunPage() {
                     key={task.id}
                     className="flex items-center gap-3 rounded-xl bg-white/[0.03] border border-white/[0.04] px-3 py-2"
                   >
-                    <Loader2 className="h-3 w-3 text-purple-400 animate-spin shrink-0" />
+                    <Loader2 className="h-3 w-3 text-neutral-600 animate-spin shrink-0" />
                     <span className="text-xs font-medium text-foreground/80">@{task.creator}</span>
                     <span className="text-[11px] text-muted-foreground">{task.step}</span>
                     {task.views && (
@@ -224,7 +224,7 @@ export default function RunPage() {
 
             {/* Completion CTA */}
             {progress.status === "completed" && progress.videosAnalyzed > 0 && (
-              <Button asChild className="w-full rounded-xl h-11 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 border-0 font-semibold gap-2">
+              <Button asChild className="w-full rounded-xl h-11 bg-neutral-900 text-white hover:bg-neutral-800 border-0 font-semibold gap-2">
                 <Link href="/videos">
                   <Film className="h-4 w-4" />
                   View {progress.videosAnalyzed} New Videos
@@ -263,7 +263,7 @@ export default function RunPage() {
                         line.includes("Error") || line.includes("error")
                           ? "text-red-400"
                           : line.includes("done") || line.includes("complete") || line.includes("Complete")
-                          ? "text-emerald-400/80"
+                          ? "text-neutral-400/80"
                           : "text-muted-foreground"
                       }`}
                     >

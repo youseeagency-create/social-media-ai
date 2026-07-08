@@ -12,10 +12,14 @@ import type { CalendarItem } from "@/lib/types";
 const STATUSES = ["planned", "filming", "posted"] as const;
 type Status = (typeof STATUSES)[number];
 
+// All chips use dark text on a light fill (or a bordered white fill) so the
+// label is always clearly readable; the three statuses are distinguished by
+// fill shade + border + dot shade. Dots are dark so they read both inside the
+// chip and in the legend (which sits on the white page background).
 const statusMeta: Record<Status, { label: string; chip: string; dot: string }> = {
-  planned: { label: "Planned", chip: "bg-sky-500/15 text-sky-300 border-sky-500/25", dot: "bg-sky-400" },
-  filming: { label: "Filming", chip: "bg-amber-500/15 text-amber-300 border-amber-500/25", dot: "bg-amber-400" },
-  posted: { label: "Posted", chip: "bg-emerald-500/15 text-emerald-300 border-emerald-500/25", dot: "bg-emerald-400" },
+  planned: { label: "Planned", chip: "bg-neutral-100 text-neutral-700 border-neutral-300", dot: "bg-neutral-400" },
+  filming: { label: "Filming", chip: "bg-neutral-200 text-neutral-900 border-neutral-400", dot: "bg-neutral-600" },
+  posted: { label: "Posted", chip: "bg-white text-neutral-900 border-neutral-900", dot: "bg-neutral-900" },
 };
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -40,12 +44,29 @@ export function CalendarTab({ workspaceId }: { workspaceId: string }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
 
-  const load = () => {
-    fetch(`/api/calendar?workspaceId=${workspaceId}`)
-      .then((r) => r.json())
-      .then((data) => setItems(Array.isArray(data) ? data : []));
-  };
-  useEffect(load, [workspaceId]);
+  useEffect(() => {
+    let active = true;
+    const load = () => {
+      fetch(`/api/calendar?workspaceId=${workspaceId}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (active) setItems(Array.isArray(data) ? data : []);
+        })
+        .catch(() => {});
+    };
+    load();
+    // Poll so items the other side (admin or client) adds to this shared
+    // workspace calendar appear without a manual refresh; also refresh when the
+    // tab regains focus.
+    const interval = setInterval(load, 10000);
+    const onFocus = () => load();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      active = false;
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [workspaceId]);
 
   const openNew = (dateStr: string) => {
     setSaveError("");
@@ -147,21 +168,21 @@ export function CalendarTab({ workspaceId }: { workspaceId: string }) {
               const n = new Date();
               setCursor({ year: n.getFullYear(), month: n.getMonth() });
             }}
-            className="h-8 rounded-lg border-white/[0.08] text-xs"
+            className="h-8 rounded-lg border-neutral-300 text-xs"
           >
             Today
           </Button>
         </div>
         <Button
           onClick={() => openNew(todayStr)}
-          className="h-9 gap-1.5 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 border-0"
+          className="h-9 gap-1.5 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 border-0"
         >
           <Plus className="h-4 w-4" /> Add item
         </Button>
       </div>
 
-      <div className="glass overflow-hidden rounded-2xl">
-        <div className="grid grid-cols-7 border-b border-white/[0.06] text-center text-[11px] font-medium text-muted-foreground">
+      <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+        <div className="grid grid-cols-7 border-b border-neutral-200 text-center text-[11px] font-medium text-neutral-500">
           {WEEKDAYS.map((w) => (
             <div key={w} className="py-2">
               {w}
@@ -173,15 +194,15 @@ export function CalendarTab({ workspaceId }: { workspaceId: string }) {
             <div
               key={i}
               onClick={() => dateStr && openNew(dateStr)}
-              className={`min-h-[92px] border-b border-r border-white/[0.04] p-1.5 ${
-                dateStr ? "cursor-pointer hover:bg-white/[0.02]" : "bg-black/10"
+              className={`min-h-[92px] border-b border-r border-neutral-200 p-1.5 ${
+                dateStr ? "cursor-pointer hover:bg-neutral-50" : "bg-neutral-50"
               } ${i % 7 === 6 ? "border-r-0" : ""}`}
             >
               {dateStr && (
                 <>
                   <div
                     className={`mb-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] ${
-                      dateStr === todayStr ? "bg-purple-500 text-white" : "text-muted-foreground"
+                      dateStr === todayStr ? "bg-neutral-900 text-white" : "text-neutral-500"
                     }`}
                   >
                     {Number(dateStr.slice(-2))}
@@ -278,7 +299,7 @@ export function CalendarTab({ workspaceId }: { workspaceId: string }) {
               <Button
                 onClick={save}
                 disabled={saving || !form.title.trim() || !form.scheduledDate}
-                className="h-10 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 border-0"
+                className="h-10 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 border-0"
               >
                 {saving ? "Saving…" : editing?.mode === "edit" ? "Save changes" : "Add item"}
               </Button>
