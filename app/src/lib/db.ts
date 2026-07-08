@@ -1,7 +1,16 @@
 import { neon } from "@neondatabase/serverless";
 import { drizzle, type NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { eq, and, desc } from "drizzle-orm";
-import { users, workspaces, workspaceClients, inspirationItems, notes, footage, analyses } from "./schema";
+import {
+  users,
+  workspaces,
+  workspaceClients,
+  inspirationItems,
+  notes,
+  footage,
+  analyses,
+  calendarItems,
+} from "./schema";
 import type {
   User,
   Workspace,
@@ -11,6 +20,7 @@ import type {
   Note,
   Footage,
   Analysis,
+  CalendarItem,
 } from "./types";
 
 // Lazily constructed so DATABASE_URL only needs to be set by the time a query
@@ -312,4 +322,46 @@ export async function updateAnalysis(
 export async function deleteAnalysis(id: string): Promise<void> {
   if (!isUuid(id)) return;
   await db.delete(analyses).where(eq(analyses.id, id));
+}
+
+// Calendar items
+export async function listCalendarItems(workspaceId: string): Promise<CalendarItem[]> {
+  if (!isUuid(workspaceId)) return [];
+  return db
+    .select()
+    .from(calendarItems)
+    .where(eq(calendarItems.workspaceId, workspaceId))
+    .orderBy(calendarItems.scheduledDate);
+}
+
+export async function createCalendarItem(data: {
+  workspaceId: string;
+  title: string;
+  description: string | null;
+  scheduledDate: string;
+  status: CalendarItem["status"];
+  createdBy: string;
+}): Promise<CalendarItem> {
+  const rows = await db.insert(calendarItems).values(data).returning();
+  return rows[0];
+}
+
+export async function getCalendarItemById(id: string): Promise<CalendarItem | null> {
+  if (!isUuid(id)) return null;
+  const rows = await db.select().from(calendarItems).where(eq(calendarItems.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function updateCalendarItem(
+  id: string,
+  data: Partial<Pick<CalendarItem, "title" | "description" | "scheduledDate" | "status">>
+): Promise<CalendarItem | null> {
+  if (!isUuid(id)) return null;
+  const rows = await db.update(calendarItems).set(data).where(eq(calendarItems.id, id)).returning();
+  return rows[0] ?? null;
+}
+
+export async function deleteCalendarItem(id: string): Promise<void> {
+  if (!isUuid(id)) return;
+  await db.delete(calendarItems).where(eq(calendarItems.id, id));
 }

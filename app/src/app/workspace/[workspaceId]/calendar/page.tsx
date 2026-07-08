@@ -1,7 +1,10 @@
-export default function ContentCalendarTab() {
-  return (
-    <div className="glass rounded-2xl p-8 text-sm text-muted-foreground">
-      Content Calendar tab — coming soon.
-    </div>
-  );
+import { CalendarTab } from "@/components/calendar-tab";
+
+export default async function CalendarPage({
+  params,
+}: {
+  params: Promise<{ workspaceId: string }>;
+}) {
+  const { workspaceId } = await params;
+  return <CalendarTab workspaceId={workspaceId} />;
 }

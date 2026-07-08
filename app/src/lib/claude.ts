@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import type { ReportData } from "./reports";
 
 export async function generateNewConcepts(
   videoAnalysis: string,
@@ -78,6 +79,52 @@ ${videoAnalysis}
 Keep hooks specific and punchy. No fluff.
 
 # BEGIN`,
+      },
+    ],
+  });
+
+  const block = message.content[0];
+  return block.type === "text" ? block.text : "";
+}
+
+// Writes a short, client-facing executive summary of a workspace report.
+export async function generateReportSummary(report: ReportData): Promise<string> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error("ANTHROPIC_API_KEY not set");
+
+  const client = new Anthropic({ apiKey });
+
+  const period =
+    report.from || report.to
+      ? `${report.from || "the beginning"} to ${report.to || "today"}`
+      : "all time";
+
+  const message = await client.messages.create({
+    model: "claude-sonnet-4-5-20250929",
+    max_tokens: 1024,
+    messages: [
+      {
+        role: "user",
+        content: `Write a short, warm, professional executive summary (2-4 sentences, no headings, first person plural "we") for a content-agency client report. It will be read by the client. Summarize the work done for "${report.workspaceName}" over the period ${period} based on these figures. Be encouraging and concrete; do not invent numbers or facts beyond what's given. If activity is light, frame it as groundwork.
+
+DATA (JSON):
+${JSON.stringify(
+  {
+    inspirationSaved: report.inspiration.total,
+    inspirationByPlatform: report.inspiration.byPlatform,
+    notes: report.notes,
+    footageUploaded: report.footage.total,
+    footageByKind: report.footage.byKind,
+    videosAnalyzed: report.analyses.completed,
+    calendarItems: report.calendar.total,
+    calendarByStatus: report.calendar.byStatus,
+    upcomingCount: report.calendar.upcoming.length,
+  },
+  null,
+  2
+)}
+
+Return only the summary prose.`,
       },
     ],
   });

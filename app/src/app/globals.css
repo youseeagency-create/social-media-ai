@@ -108,3 +108,23 @@
     box-shadow: 0 0 20px -8px oklch(0.55 0.19 265 / 15%);
   }
 }
+
+/* Print: show only the report document (id="report"), hide app chrome. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #report,
+  #report * {
+    visibility: visible;
+  }
+  #report {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
