@@ -25,6 +25,7 @@ npm run dev
 - `ANTHROPIC_API_KEY` — Claude concept generation
 - `SESSION_SECRET` — signs login session cookies (generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
 - `DATABASE_URL` — Postgres connection string (Neon, provisioned via Vercel's Marketplace integration; same DB used for local dev and production for now)
+- `BLOB_READ_WRITE_TOKEN` — Vercel Blob store token for voice-note audio (auto-added when the Blob store is created; pulled locally into `app/.env.local` via `vercel env pull`)
 
 **First-time setup**:
 ```bash
@@ -70,14 +71,16 @@ npx tsx src/scripts/seed-auth.ts   # safe to re-run — skips if the email alrea
 
 ## Multi-Client Platform (Auth + Workspaces)
 
-This is being built out in stages into a multi-client platform. Stage 1 added authentication and a workspace shell (CSV-backed); that was then migrated to Postgres since Vercel's filesystem is read-only/ephemeral. Feature logic inside workspace tabs comes in later stages. `configs`/`creators`/`videos` are still CSV-backed — only the auth/workspace entities moved to the database.
+This is being built out in stages into a multi-client platform. Stage 1 added authentication and a workspace shell (CSV-backed); that was then migrated to Postgres since Vercel's filesystem is read-only/ephemeral. Stage 2 made the Inspiration and Notes tabs functional. The remaining tabs (Footage, Analysis, Content Calendar, Reports) are still placeholders. `configs`/`creators`/`videos` are still CSV-backed — only the auth/workspace/tab entities moved to the database.
 
 - **Two account types**: `admin` (sees/manages everything) and `client` (sees only their assigned workspace(s)).
 - **Auth**: email/password login, sessions are signed HTTP-only cookies (`app/src/lib/session.ts`, Web Crypto HMAC — no auth library dependency). Password hashing via Node's `crypto.scrypt` (`app/src/lib/password.ts`). Route protection is centralized in `app/src/proxy.ts` (Next.js's `middleware.ts` convention, renamed to `proxy.ts` in Next 16 — must live in `src/` alongside `app/`, not at the project root).
 - **Admin-only pages**: `/`, `/videos`, `/run`, `/configs`, `/creators`, `/admin` (and their API routes) all require an admin session. Non-admin/unauthenticated requests are redirected (pages) or get 401/403 JSON (API).
 - **Admin dashboard** (`/admin`): create/rename/delete workspaces, create client accounts, assign clients to workspaces.
-- **Workspace shell** (`/workspace/[workspaceId]/...`): 6 tabs — Inspiration, Notes, Footage, Analysis, Content Calendar, Reports — currently all placeholders. Per-workspace access is checked in `app/src/app/workspace/[workspaceId]/layout.tsx` via `isUserAssignedToWorkspace` (admins bypass this check).
-- **Data**: Postgres tables `users`, `workspaces`, `workspace_clients` (schema in `app/src/lib/schema.ts`, queries in `app/src/lib/db.ts`). `workspace_clients` has real foreign keys with `ON DELETE CASCADE` — deleting a workspace or user automatically cleans up assignment rows. Schema changes: edit `schema.ts`, run `npx drizzle-kit generate` (writes SQL to `app/drizzle/`, commit it), then `npm run db:migrate`.
+- **Workspace shell** (`/workspace/[workspaceId]/...`): 6 tabs. **Inspiration** and **Notes** are functional (Stage 2); Footage, Analysis, Content Calendar, Reports are placeholders. Per-workspace access is checked in `app/src/app/workspace/[workspaceId]/layout.tsx` via `isUserAssignedToWorkspace` (admins bypass this check).
+- **Inspiration tab**: save Instagram/TikTok/YouTube/other links per workspace (platform auto-detected in `app/src/lib/inspiration.ts`; YouTube thumbnails derived, no scraping). **Notes tab**: text notes + browser-recorded voice notes in one chronological list. Voice audio is stored in **Vercel Blob** (`@vercel/blob`, public access) via the client-upload flow — `app/src/components/voice-recorder.tsx` records via `MediaRecorder`, uploads through `app/src/app/api/notes/upload/route.ts` (`handleUpload`, auth in `onBeforeGenerateToken`), then the note row is saved client-side (the completion webhook doesn't fire locally). Deleting a voice note also `del()`s its blob. Requires `BLOB_READ_WRITE_TOKEN` (from the Vercel Blob store).
+- **Client-facing tab API routes** (`/api/inspiration`, `/api/notes`, `/api/notes/upload`) are intentionally **not** under the admin-only `/api/workspaces/*` prefix and are **not** in the `proxy.ts` matcher — each handler authorizes with `requireWorkspaceAccess(workspaceId)` (`app/src/lib/auth.ts`: admin bypass, else `isUserAssignedToWorkspace`), so both admins and assigned clients can read/write their own workspace's data.
+- **Data**: Postgres tables `users`, `workspaces`, `workspace_clients`, `inspiration_items`, `notes` (schema in `app/src/lib/schema.ts`, queries in `app/src/lib/db.ts`). All workspace-scoped tables have `ON DELETE CASCADE` on `workspace_id` (deleting a workspace clears its content); `created_by` FKs use `ON DELETE SET NULL`. Schema changes: edit `schema.ts`, run `npx drizzle-kit generate` (writes SQL to `app/drizzle/`, commit it), then `npm run db:migrate`.
 - **Bootstrapping the first admin**: `npx tsx src/scripts/seed-auth.ts` (see "First-time setup" above) — idempotent, skips if `ADMIN_EMAIL` already exists in the DB. Unrelated to `app/src/scripts/seed.ts`, which unconditionally overwrites `configs.csv`/`creators.csv`/`videos.csv` and should only ever be run on a fresh install.
 
 ---
@@ -111,8 +114,9 @@ This is being built out in stages into a multi-client platform. Stage 1 added au
 │   │   │   ├── gemini.ts                 # Gemini video analysis client
 │   │   │   ├── claude.ts                 # Claude concept generation client
 │   │   │   ├── csv.ts                    # CSV read/write utilities (configs/creators/videos only)
-│   │   │   ├── schema.ts                 # Drizzle Postgres schema (users/workspaces/workspace_clients)
+│   │   │   ├── schema.ts                 # Drizzle Postgres schema (users/workspaces/workspace_clients/inspiration_items/notes)
 │   │   │   ├── db.ts                     # Drizzle client + query functions
+│   │   │   ├── inspiration.ts            # URL platform detection + YouTube thumbnail derivation
 │   │   │   ├── media.ts                  # Downloads Instagram CDN images and stores them locally
 │   │   │   ├── session.ts                # Signed session cookie create/verify (Web Crypto)
 │   │   │   ├── password.ts               # Password hashing (scrypt)
@@ -150,7 +154,7 @@ This is being built out in stages into a multi-client platform. Stage 1 added au
 | Creators | `/creators` | Admin | CRUD for competitor Instagram accounts |
 | Workspaces (admin) | `/admin` | Admin | CRUD workspaces, create client accounts, manage access |
 | Workspace picker | `/workspace` | Client | Lists assigned workspaces (auto-redirects if only one) |
-| Workspace shell | `/workspace/[id]/...` | Admin + assigned client | 6 tabs: Inspiration, Notes, Footage, Analysis, Content Calendar, Reports (placeholders for now) |
+| Workspace shell | `/workspace/[id]/...` | Admin + assigned client | 6 tabs: Inspiration + Notes (functional), Footage/Analysis/Content Calendar/Reports (placeholders) |
 
 ---
 

@@ -1,7 +1,10 @@
-export default function NotesTab() {
-  return (
-    <div className="glass rounded-2xl p-8 text-sm text-muted-foreground">
-      Notes tab — coming soon.
-    </div>
-  );
+import { NotesTab } from "@/components/notes-tab";
+
+export default async function NotesPage({
+  params,
+}: {
+  params: Promise<{ workspaceId: string }>;
+}) {
+  const { workspaceId } = await params;
+  return <NotesTab workspaceId={workspaceId} />;
 }

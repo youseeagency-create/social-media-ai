@@ -1,8 +1,8 @@
 import { neon } from "@neondatabase/serverless";
 import { drizzle, type NeonHttpDatabase } from "drizzle-orm/neon-http";
-import { eq, and } from "drizzle-orm";
-import { users, workspaces, workspaceClients } from "./schema";
-import type { User, Workspace, WorkspaceClient, UserRole } from "./types";
+import { eq, and, desc } from "drizzle-orm";
+import { users, workspaces, workspaceClients, inspirationItems, notes } from "./schema";
+import type { User, Workspace, WorkspaceClient, UserRole, InspirationItem, Note } from "./types";
 
 // Lazily constructed so DATABASE_URL only needs to be set by the time a query
 // actually runs, not at module-import time (import statements are hoisted
@@ -149,4 +149,70 @@ export async function listWorkspacesForUser(userId: string): Promise<Workspace[]
 export async function isUserAssignedToWorkspace(workspaceId: string, userId: string): Promise<boolean> {
   const link = await getWorkspaceClientByPair(workspaceId, userId);
   return link !== null;
+}
+
+// Inspiration items
+export async function listInspiration(workspaceId: string): Promise<InspirationItem[]> {
+  if (!isUuid(workspaceId)) return [];
+  return db
+    .select()
+    .from(inspirationItems)
+    .where(eq(inspirationItems.workspaceId, workspaceId))
+    .orderBy(desc(inspirationItems.createdAt));
+}
+
+export async function createInspiration(data: {
+  workspaceId: string;
+  url: string;
+  platform: InspirationItem["platform"];
+  thumbnailUrl: string | null;
+  createdBy: string;
+}): Promise<InspirationItem> {
+  const rows = await db.insert(inspirationItems).values(data).returning();
+  return rows[0];
+}
+
+export async function getInspirationById(id: string): Promise<InspirationItem | null> {
+  if (!isUuid(id)) return null;
+  const rows = await db.select().from(inspirationItems).where(eq(inspirationItems.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function deleteInspiration(id: string): Promise<void> {
+  if (!isUuid(id)) return;
+  await db.delete(inspirationItems).where(eq(inspirationItems.id, id));
+}
+
+// Notes
+export async function listNotes(workspaceId: string): Promise<Note[]> {
+  if (!isUuid(workspaceId)) return [];
+  return db
+    .select()
+    .from(notes)
+    .where(eq(notes.workspaceId, workspaceId))
+    .orderBy(desc(notes.createdAt));
+}
+
+export async function createNote(data: {
+  workspaceId: string;
+  kind: Note["kind"];
+  title: string | null;
+  body: string | null;
+  audioUrl: string | null;
+  audioDurationSeconds: number | null;
+  createdBy: string;
+}): Promise<Note> {
+  const rows = await db.insert(notes).values(data).returning();
+  return rows[0];
+}
+
+export async function getNoteById(id: string): Promise<Note | null> {
+  if (!isUuid(id)) return null;
+  const rows = await db.select().from(notes).where(eq(notes.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function deleteNote(id: string): Promise<void> {
+  if (!isUuid(id)) return;
+  await db.delete(notes).where(eq(notes.id, id));
 }

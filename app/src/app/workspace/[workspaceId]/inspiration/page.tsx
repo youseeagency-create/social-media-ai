@@ -1,7 +1,10 @@
-export default function InspirationTab() {
-  return (
-    <div className="glass rounded-2xl p-8 text-sm text-muted-foreground">
-      Inspiration tab — coming soon.
-    </div>
-  );
+import { InspirationTab } from "@/components/inspiration-tab";
+
+export default async function InspirationPage({
+  params,
+}: {
+  params: Promise<{ workspaceId: string }>;
+}) {
+  const { workspaceId } = await params;
+  return <InspirationTab workspaceId={workspaceId} />;
 }
