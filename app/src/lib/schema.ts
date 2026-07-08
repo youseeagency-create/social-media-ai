@@ -112,9 +112,31 @@ export const footage = pgTable(
   (t) => [check("footage_kind_check", sql`${t.kind} in ('video', 'image', 'audio')`)]
 );
 
+export const analyses = pgTable(
+  "analyses",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    videoUrl: text("video_url").notNull(),
+    videoName: text("video_name").notNull(),
+    status: text("status", { enum: ["processing", "completed", "failed"] }).notNull(),
+    analysisPrompt: text("analysis_prompt").notNull(),
+    brandContext: text("brand_context"),
+    analysisText: text("analysis_text"),
+    ideasText: text("ideas_text"),
+    error: text("error"),
+    createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt,
+  },
+  (t) => [check("analyses_status_check", sql`${t.status} in ('processing', 'completed', 'failed')`)]
+);
+
 export type User = typeof users.$inferSelect;
 export type Workspace = typeof workspaces.$inferSelect;
 export type WorkspaceClient = typeof workspaceClients.$inferSelect;
 export type InspirationItem = typeof inspirationItems.$inferSelect;
 export type Note = typeof notes.$inferSelect;
 export type Footage = typeof footage.$inferSelect;
+export type Analysis = typeof analyses.$inferSelect;

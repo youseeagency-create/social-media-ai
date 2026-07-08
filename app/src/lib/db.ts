@@ -1,8 +1,17 @@
 import { neon } from "@neondatabase/serverless";
 import { drizzle, type NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { eq, and, desc } from "drizzle-orm";
-import { users, workspaces, workspaceClients, inspirationItems, notes, footage } from "./schema";
-import type { User, Workspace, WorkspaceClient, UserRole, InspirationItem, Note, Footage } from "./types";
+import { users, workspaces, workspaceClients, inspirationItems, notes, footage, analyses } from "./schema";
+import type {
+  User,
+  Workspace,
+  WorkspaceClient,
+  UserRole,
+  InspirationItem,
+  Note,
+  Footage,
+  Analysis,
+} from "./types";
 
 // Lazily constructed so DATABASE_URL only needs to be set by the time a query
 // actually runs, not at module-import time (import statements are hoisted
@@ -259,4 +268,48 @@ export async function getFootageById(id: string): Promise<Footage | null> {
 export async function deleteFootage(id: string): Promise<void> {
   if (!isUuid(id)) return;
   await db.delete(footage).where(eq(footage.id, id));
+}
+
+// Analyses
+export async function listAnalyses(workspaceId: string): Promise<Analysis[]> {
+  if (!isUuid(workspaceId)) return [];
+  return db
+    .select()
+    .from(analyses)
+    .where(eq(analyses.workspaceId, workspaceId))
+    .orderBy(desc(analyses.createdAt));
+}
+
+export async function createAnalysis(data: {
+  workspaceId: string;
+  videoUrl: string;
+  videoName: string;
+  analysisPrompt: string;
+  brandContext: string | null;
+  createdBy: string;
+}): Promise<Analysis> {
+  const rows = await db
+    .insert(analyses)
+    .values({ ...data, status: "processing" })
+    .returning();
+  return rows[0];
+}
+
+export async function getAnalysisById(id: string): Promise<Analysis | null> {
+  if (!isUuid(id)) return null;
+  const rows = await db.select().from(analyses).where(eq(analyses.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function updateAnalysis(
+  id: string,
+  data: Partial<Pick<Analysis, "status" | "analysisText" | "ideasText" | "error">>
+): Promise<void> {
+  if (!isUuid(id)) return;
+  await db.update(analyses).set(data).where(eq(analyses.id, id));
+}
+
+export async function deleteAnalysis(id: string): Promise<void> {
+  if (!isUuid(id)) return;
+  await db.delete(analyses).where(eq(analyses.id, id));
 }
