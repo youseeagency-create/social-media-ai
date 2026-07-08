@@ -1,6 +1,6 @@
-import type { User, Workspace, WorkspaceClient, InspirationItem, Note } from "./schema";
+import type { User, Workspace, WorkspaceClient, InspirationItem, Note, Footage } from "./schema";
 
-export type { User, Workspace, WorkspaceClient, InspirationItem, Note };
+export type { User, Workspace, WorkspaceClient, InspirationItem, Note, Footage };
 
 export interface Config {
   id: string;

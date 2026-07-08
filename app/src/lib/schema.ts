@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, uuid, text, integer, timestamp, unique, uniqueIndex, check } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, integer, bigint, timestamp, unique, uniqueIndex, check } from "drizzle-orm/pg-core";
 
 // `mode: "string"` so createdAt is a string in both server reads and over the
 // fetch().json() boundary — a Drizzle `Date` would be an ISO string at runtime
@@ -94,8 +94,27 @@ export const notes = pgTable(
   (t) => [check("notes_kind_check", sql`${t.kind} in ('text', 'voice')`)]
 );
 
+export const footage = pgTable(
+  "footage",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    url: text("url").notNull(),
+    contentType: text("content_type").notNull(),
+    sizeBytes: bigint("size_bytes", { mode: "number" }).notNull(),
+    kind: text("kind", { enum: ["video", "image", "audio"] }).notNull(),
+    createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt,
+  },
+  (t) => [check("footage_kind_check", sql`${t.kind} in ('video', 'image', 'audio')`)]
+);
+
 export type User = typeof users.$inferSelect;
 export type Workspace = typeof workspaces.$inferSelect;
 export type WorkspaceClient = typeof workspaceClients.$inferSelect;
 export type InspirationItem = typeof inspirationItems.$inferSelect;
 export type Note = typeof notes.$inferSelect;
+export type Footage = typeof footage.$inferSelect;

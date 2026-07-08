@@ -1,8 +1,8 @@
 import { neon } from "@neondatabase/serverless";
 import { drizzle, type NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { eq, and, desc } from "drizzle-orm";
-import { users, workspaces, workspaceClients, inspirationItems, notes } from "./schema";
-import type { User, Workspace, WorkspaceClient, UserRole, InspirationItem, Note } from "./types";
+import { users, workspaces, workspaceClients, inspirationItems, notes, footage } from "./schema";
+import type { User, Workspace, WorkspaceClient, UserRole, InspirationItem, Note, Footage } from "./types";
 
 // Lazily constructed so DATABASE_URL only needs to be set by the time a query
 // actually runs, not at module-import time (import statements are hoisted
@@ -225,4 +225,38 @@ export async function getNoteById(id: string): Promise<Note | null> {
 export async function deleteNote(id: string): Promise<void> {
   if (!isUuid(id)) return;
   await db.delete(notes).where(eq(notes.id, id));
+}
+
+// Footage
+export async function listFootage(workspaceId: string): Promise<Footage[]> {
+  if (!isUuid(workspaceId)) return [];
+  return db
+    .select()
+    .from(footage)
+    .where(eq(footage.workspaceId, workspaceId))
+    .orderBy(desc(footage.createdAt));
+}
+
+export async function createFootage(data: {
+  workspaceId: string;
+  name: string;
+  url: string;
+  contentType: string;
+  sizeBytes: number;
+  kind: Footage["kind"];
+  createdBy: string;
+}): Promise<Footage> {
+  const rows = await db.insert(footage).values(data).returning();
+  return rows[0];
+}
+
+export async function getFootageById(id: string): Promise<Footage | null> {
+  if (!isUuid(id)) return null;
+  const rows = await db.select().from(footage).where(eq(footage.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function deleteFootage(id: string): Promise<void> {
+  if (!isUuid(id)) return;
+  await db.delete(footage).where(eq(footage.id, id));
 }
