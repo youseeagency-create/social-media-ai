@@ -1,0 +1,2 @@
+ALTER TABLE "inspiration_items" ADD COLUMN "thumbnail_status" text DEFAULT 'none' NOT NULL;--> statement-breakpoint
+ALTER TABLE "inspiration_items" ADD CONSTRAINT "inspiration_thumbnail_status_check" CHECK ("inspiration_items"."thumbnail_status" in ('pending', 'ready', 'failed', 'none'));

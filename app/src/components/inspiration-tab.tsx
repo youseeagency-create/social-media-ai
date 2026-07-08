@@ -1,9 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Instagram, Youtube, Music2, Link as LinkIcon, Plus, Trash2, ExternalLink, Lightbulb } from "lucide-react";
+import {
+  Instagram,
+  Youtube,
+  Music2,
+  Link as LinkIcon,
+  Plus,
+  Trash2,
+  ExternalLink,
+  Lightbulb,
+  Loader2,
+  RefreshCw,
+} from "lucide-react";
 import type { InspirationItem } from "@/lib/types";
 
 const platformMeta: Record<
@@ -30,12 +41,33 @@ export function InspirationTab({ workspaceId }: { workspaceId: string }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const inflight = useRef<Set<string>>(new Set());
+
+  // Scrapes + persists an Instagram/TikTok thumbnail, then patches the card.
+  const fetchThumbnail = async (id: string) => {
+    if (inflight.current.has(id)) return;
+    inflight.current.add(id);
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, thumbnailStatus: "pending" } : i)));
+    try {
+      const res = await fetch(`/api/inspiration/thumbnail?id=${id}`, { method: "POST" });
+      if (res.ok) {
+        const updated = (await res.json()) as InspirationItem;
+        setItems((prev) => prev.map((i) => (i.id === id ? updated : i)));
+      }
+    } finally {
+      inflight.current.delete(id);
+    }
+  };
 
   const load = () => {
     setLoading(true);
     fetch(`/api/inspiration?workspaceId=${workspaceId}`)
       .then((r) => r.json())
-      .then((data) => setItems(Array.isArray(data) ? data : []))
+      .then((data) => {
+        const list: InspirationItem[] = Array.isArray(data) ? data : [];
+        setItems(list);
+        list.filter((i) => i.thumbnailStatus === "pending").forEach((i) => fetchThumbnail(i.id));
+      })
       .finally(() => setLoading(false));
   };
 
@@ -59,6 +91,7 @@ export function InspirationTab({ workspaceId }: { workspaceId: string }) {
       }
       setUrl("");
       setItems((prev) => [data, ...prev]);
+      if (data.thumbnailStatus === "pending") fetchThumbnail(data.id);
     } finally {
       setSaving(false);
     }
@@ -113,6 +146,11 @@ export function InspirationTab({ workspaceId }: { workspaceId: string }) {
                         alt=""
                         className="h-full w-full object-cover transition-opacity group-hover:opacity-90"
                       />
+                    ) : item.thumbnailStatus === "pending" ? (
+                      <div className="flex h-full w-full flex-col items-center justify-center gap-1.5">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/50" />
+                        <span className="text-[10px] text-muted-foreground/50">Loading preview…</span>
+                      </div>
                     ) : (
                       <div className="flex h-full w-full items-center justify-center">
                         <Icon className="h-8 w-8 text-muted-foreground/40" />
@@ -134,6 +172,15 @@ export function InspirationTab({ workspaceId }: { workspaceId: string }) {
                     </p>
                   </div>
                   <div className="flex shrink-0 gap-1">
+                    {item.thumbnailStatus === "failed" && (
+                      <button
+                        onClick={() => fetchThumbnail(item.id)}
+                        title="Retry preview"
+                        className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground"
+                      >
+                        <RefreshCw className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                     <a
                       href={item.url}
                       target="_blank"

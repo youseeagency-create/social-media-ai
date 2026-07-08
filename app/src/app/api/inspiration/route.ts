@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { del } from "@vercel/blob";
 import { requireWorkspaceAccess } from "@/lib/auth";
 import { listInspiration, createInspiration, getInspirationById, deleteInspiration } from "@/lib/db";
 import { detectPlatform, isValidHttpUrl } from "@/lib/inspiration";
@@ -27,11 +28,19 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { platform, thumbnailUrl } = detectPlatform(body.url);
+  // YouTube thumbnails are derived on the spot; Instagram/TikTok get scraped
+  // asynchronously via /api/inspiration/thumbnail, so they start as "pending".
+  const thumbnailStatus = thumbnailUrl
+    ? "ready"
+    : platform === "instagram" || platform === "tiktok"
+      ? "pending"
+      : "none";
   const item = await createInspiration({
     workspaceId: body.workspaceId,
     url: body.url,
     platform,
     thumbnailUrl,
+    thumbnailStatus,
     createdBy: user.id,
   });
   return NextResponse.json(item, { status: 201 });
@@ -47,6 +56,16 @@ export async function DELETE(request: Request) {
 
   const user = await requireWorkspaceAccess(item.workspaceId);
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  // Clean up a Blob-stored thumbnail (IG/TikTok). YouTube thumbnails live on
+  // img.youtube.com and aren't ours to delete.
+  if (item.thumbnailUrl?.includes(".blob.vercel-storage.com")) {
+    try {
+      await del(item.thumbnailUrl);
+    } catch {
+      // ignore
+    }
+  }
 
   await deleteInspiration(id);
   return NextResponse.json({ success: true });

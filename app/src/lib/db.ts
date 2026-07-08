@@ -166,10 +166,20 @@ export async function createInspiration(data: {
   url: string;
   platform: InspirationItem["platform"];
   thumbnailUrl: string | null;
+  thumbnailStatus: InspirationItem["thumbnailStatus"];
   createdBy: string;
 }): Promise<InspirationItem> {
   const rows = await db.insert(inspirationItems).values(data).returning();
   return rows[0];
+}
+
+export async function updateInspirationThumbnail(
+  id: string,
+  data: { thumbnailUrl?: string | null; thumbnailStatus: InspirationItem["thumbnailStatus"] }
+): Promise<InspirationItem | null> {
+  if (!isUuid(id)) return null;
+  const rows = await db.update(inspirationItems).set(data).where(eq(inspirationItems.id, id)).returning();
+  return rows[0] ?? null;
 }
 
 export async function getInspirationById(id: string): Promise<InspirationItem | null> {

@@ -59,11 +59,20 @@ export const inspirationItems = pgTable(
     url: text("url").notNull(),
     platform: text("platform", { enum: ["instagram", "tiktok", "youtube", "other"] }).notNull(),
     thumbnailUrl: text("thumbnail_url"),
+    // pending = queued for scraping, ready = has a usable thumbnail (or none needed),
+    // failed = scrape attempted and gave up, none = platform has no thumbnail concept.
+    thumbnailStatus: text("thumbnail_status", { enum: ["pending", "ready", "failed", "none"] })
+      .notNull()
+      .default("none"),
     createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
     createdAt,
   },
   (t) => [
     check("inspiration_platform_check", sql`${t.platform} in ('instagram', 'tiktok', 'youtube', 'other')`),
+    check(
+      "inspiration_thumbnail_status_check",
+      sql`${t.thumbnailStatus} in ('pending', 'ready', 'failed', 'none')`
+    ),
   ]
 );
 
