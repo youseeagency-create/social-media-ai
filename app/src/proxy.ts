@@ -13,7 +13,6 @@ const ADMIN_ONLY_API_PREFIXES = [
 ];
 
 function isAdminOnlyPage(pathname: string): boolean {
-  if (pathname === "/") return true;
   return ADMIN_ONLY_PAGE_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(prefix + "/"));
 }
 
@@ -44,7 +43,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/",
     "/videos/:path*",
     "/run/:path*",
     "/configs/:path*",

@@ -157,6 +157,7 @@ This is being built out in stages into a multi-client platform. Stage 1 added au
 
 | Page | Path | Access | Description |
 |------|------|--------|-------------|
+| Home | `/` | Public | Marketing homepage (`app/src/app/page.tsx`) — HayeMedia agency site; Client Login + Apply CTAs. Not gated by `proxy.ts`. |
 | Login | `/login` | Public | Email/password sign in |
 | Dashboard | `/` | Admin | Summary stats, recent videos |
 | Videos | `/videos` | Admin | Browse results with thumbnails, expandable analysis & concepts |
