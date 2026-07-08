@@ -14,6 +14,9 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   const body = await request.json();
+  if (!body.id || !body.name) {
+    return NextResponse.json({ error: "id and name required" }, { status: 400 });
+  }
   const updated = await updateWorkspace(body.id, { name: body.name });
   if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(updated);

@@ -24,6 +24,29 @@ export const db = new Proxy({} as NeonHttpDatabase, {
   },
 });
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Untrusted ids (route params, query strings, request bodies) reach the uuid
+// columns directly; Postgres throws "invalid input syntax for type uuid" on a
+// malformed value, so we treat anything that isn't a well-formed UUID as
+// "not found" rather than letting it surface as a 500.
+export function isUuid(value: string): boolean {
+  return UUID_RE.test(value);
+}
+
+// True for the Postgres unique_violation SQLSTATE (23505). Drizzle wraps the
+// Neon driver's error, so the `code` lives on the underlying cause rather than
+// the top-level error — walk the cause chain. Lets a lost check-then-insert
+// race return a clean 409 instead of a 500.
+export function isUniqueViolation(err: unknown): boolean {
+  let current: unknown = err;
+  while (current !== null && typeof current === "object") {
+    if ((current as { code?: string }).code === "23505") return true;
+    current = (current as { cause?: unknown }).cause;
+  }
+  return false;
+}
+
 // Users
 export async function getUserByEmail(email: string): Promise<User | null> {
   const rows = await db.select().from(users).where(eq(users.email, email.toLowerCase())).limit(1);
@@ -31,6 +54,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 }
 
 export async function getUserById(id: string): Promise<User | null> {
+  if (!isUuid(id)) return null;
   const rows = await db.select().from(users).where(eq(users.id, id)).limit(1);
   return rows[0] ?? null;
 }
@@ -60,6 +84,7 @@ export async function getWorkspaces(): Promise<Workspace[]> {
 }
 
 export async function getWorkspaceById(id: string): Promise<Workspace | null> {
+  if (!isUuid(id)) return null;
   const rows = await db.select().from(workspaces).where(eq(workspaces.id, id)).limit(1);
   return rows[0] ?? null;
 }
@@ -70,11 +95,13 @@ export async function createWorkspace(name: string): Promise<Workspace> {
 }
 
 export async function updateWorkspace(id: string, data: { name: string }): Promise<Workspace | null> {
+  if (!isUuid(id)) return null;
   const rows = await db.update(workspaces).set(data).where(eq(workspaces.id, id)).returning();
   return rows[0] ?? null;
 }
 
 export async function deleteWorkspace(id: string): Promise<void> {
+  if (!isUuid(id)) return;
   await db.delete(workspaces).where(eq(workspaces.id, id));
 }
 
@@ -84,6 +111,7 @@ export async function listWorkspaceClients(): Promise<WorkspaceClient[]> {
 }
 
 export async function getWorkspaceClientByPair(workspaceId: string, userId: string): Promise<WorkspaceClient | null> {
+  if (!isUuid(workspaceId) || !isUuid(userId)) return null;
   const rows = await db
     .select()
     .from(workspaceClients)
@@ -98,10 +126,12 @@ export async function createWorkspaceClient(workspaceId: string, userId: string)
 }
 
 export async function deleteWorkspaceClientById(id: string): Promise<void> {
+  if (!isUuid(id)) return;
   await db.delete(workspaceClients).where(eq(workspaceClients.id, id));
 }
 
 export async function deleteWorkspaceClientByPair(workspaceId: string, userId: string): Promise<void> {
+  if (!isUuid(workspaceId) || !isUuid(userId)) return;
   await db
     .delete(workspaceClients)
     .where(and(eq(workspaceClients.workspaceId, workspaceId), eq(workspaceClients.userId, userId)));

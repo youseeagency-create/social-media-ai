@@ -5,6 +5,8 @@ import {
   createWorkspaceClient,
   deleteWorkspaceClientById,
   deleteWorkspaceClientByPair,
+  isUuid,
+  isUniqueViolation,
 } from "@/lib/db";
 
 export async function GET() {
@@ -16,14 +18,26 @@ export async function POST(request: Request) {
   if (!body.workspaceId || !body.userId) {
     return NextResponse.json({ error: "workspaceId and userId required" }, { status: 400 });
   }
+  if (!isUuid(body.workspaceId) || !isUuid(body.userId)) {
+    return NextResponse.json({ error: "workspaceId and userId must be valid ids" }, { status: 400 });
+  }
 
   const existing = await getWorkspaceClientByPair(body.workspaceId, body.userId);
   if (existing) {
     return NextResponse.json({ error: "Already assigned" }, { status: 409 });
   }
 
-  const newLink = await createWorkspaceClient(body.workspaceId, body.userId);
-  return NextResponse.json(newLink, { status: 201 });
+  try {
+    const newLink = await createWorkspaceClient(body.workspaceId, body.userId);
+    return NextResponse.json(newLink, { status: 201 });
+  } catch (err) {
+    // Race: another request may have inserted the same pair between the check
+    // and this insert; the composite unique constraint turns that into a 409.
+    if (isUniqueViolation(err)) {
+      return NextResponse.json({ error: "Already assigned" }, { status: 409 });
+    }
+    throw err;
+  }
 }
 
 export async function DELETE(request: Request) {
