@@ -16,3 +16,9 @@ export async function verifyPassword(password: string, hash: string, salt: strin
   if (stored.length !== derived.length) return false;
   return timingSafeEqual(derived, stored);
 }
+
+// Valid-length dummy hash/salt so login can run scrypt even when the email
+// doesn't exist — equalizing timing so latency can't reveal which emails are
+// registered.
+export const DUMMY_PASSWORD_HASH = "00".repeat(KEYLEN);
+export const DUMMY_PASSWORD_SALT = "00".repeat(16);

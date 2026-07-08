@@ -15,6 +15,7 @@ import {
   Loader2,
   RefreshCw,
 } from "lucide-react";
+import { formatDate } from "@/lib/dates";
 import type { InspirationItem } from "@/lib/types";
 
 const platformMeta: Record<
@@ -168,7 +169,7 @@ export function InspirationTab({ workspaceId }: { workspaceId: string }) {
                     </span>
                     <p className="mt-1.5 truncate text-xs text-muted-foreground">{hostOf(item.url)}</p>
                     <p className="text-[10px] text-muted-foreground/60">
-                      {new Date(item.createdAt).toLocaleDateString()}
+                      {formatDate(item.createdAt)}
                     </p>
                   </div>
                   <div className="flex shrink-0 gap-1">

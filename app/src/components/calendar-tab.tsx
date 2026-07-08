@@ -38,6 +38,7 @@ export function CalendarTab({ workspaceId }: { workspaceId: string }) {
   const [editing, setEditing] = useState<Editing>(null);
   const [form, setForm] = useState({ title: "", description: "", scheduledDate: "", status: "planned" as Status });
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   const load = () => {
     fetch(`/api/calendar?workspaceId=${workspaceId}`)
@@ -47,10 +48,12 @@ export function CalendarTab({ workspaceId }: { workspaceId: string }) {
   useEffect(load, [workspaceId]);
 
   const openNew = (dateStr: string) => {
+    setSaveError("");
     setForm({ title: "", description: "", scheduledDate: dateStr, status: "planned" });
     setEditing({ mode: "new", scheduledDate: dateStr });
   };
   const openEdit = (item: CalendarItem) => {
+    setSaveError("");
     setForm({
       title: item.title,
       description: item.description ?? "",
@@ -63,6 +66,7 @@ export function CalendarTab({ workspaceId }: { workspaceId: string }) {
   const save = async () => {
     if (!form.title.trim() || !form.scheduledDate) return;
     setSaving(true);
+    setSaveError("");
     try {
       if (editing?.mode === "edit") {
         const res = await fetch("/api/calendar", {
@@ -70,16 +74,24 @@ export function CalendarTab({ workspaceId }: { workspaceId: string }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: editing.item.id, ...form }),
         });
-        const updated = await res.json();
-        setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+        const data = await res.json();
+        if (!res.ok) {
+          setSaveError(data.error || "Couldn't save changes.");
+          return;
+        }
+        setItems((prev) => prev.map((i) => (i.id === data.id ? data : i)));
       } else {
         const res = await fetch("/api/calendar", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ workspaceId, ...form }),
         });
-        const created = await res.json();
-        if (res.ok) setItems((prev) => [...prev, created]);
+        const data = await res.json();
+        if (!res.ok) {
+          setSaveError(data.error || "Couldn't add item.");
+          return;
+        }
+        setItems((prev) => [...prev, data]);
       }
       setEditing(null);
     } finally {
@@ -271,6 +283,7 @@ export function CalendarTab({ workspaceId }: { workspaceId: string }) {
                 {saving ? "Saving…" : editing?.mode === "edit" ? "Save changes" : "Add item"}
               </Button>
             </div>
+            {saveError && <p className="text-sm text-red-400">{saveError}</p>}
           </div>
         </DialogContent>
       </Dialog>

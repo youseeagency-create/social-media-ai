@@ -67,6 +67,8 @@ export async function PUT(request: Request) {
     ...(body.scheduledDate !== undefined ? { scheduledDate: body.scheduledDate } : {}),
     ...(body.status !== undefined ? { status: body.status } : {}),
   });
+  // Row may have been deleted between the existence check and the update.
+  if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(updated);
 }
 

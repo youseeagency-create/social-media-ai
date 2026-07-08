@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { VoiceRecorder, type RecordedAudio } from "@/components/voice-recorder";
 import { FileText, Mic, Trash2, StickyNote } from "lucide-react";
+import { formatDateTime } from "@/lib/dates";
 import type { Note } from "@/lib/types";
 
 export function NotesTab({ workspaceId }: { workspaceId: string }) {
@@ -174,7 +175,7 @@ export function NotesTab({ workspaceId }: { workspaceId: string }) {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
                   {note.kind === "voice" ? <Mic className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}
-                  <span>{new Date(note.createdAt).toLocaleString()}</span>
+                  <span>{formatDateTime(note.createdAt)}</span>
                 </div>
                 <button
                   onClick={() => handleDelete(note.id)}

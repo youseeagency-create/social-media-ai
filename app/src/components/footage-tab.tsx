@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { upload } from "@vercel/blob/client";
 import { Film, ImageIcon, Music2, Upload, Trash2, Download } from "lucide-react";
 import { MAX_FOOTAGE_BYTES, kindFromContentType, formatBytes } from "@/lib/footage";
+import { formatDate } from "@/lib/dates";
 import type { Footage } from "@/lib/types";
 
 interface Uploading {
@@ -179,7 +180,7 @@ export function FootageTab({ workspaceId }: { workspaceId: string }) {
                       <span className="truncate">{item.name}</span>
                     </p>
                     <p className="mt-0.5 text-[10px] text-muted-foreground/60">
-                      {formatBytes(item.sizeBytes)} · {new Date(item.createdAt).toLocaleDateString()}
+                      {formatBytes(item.sizeBytes)} · {formatDate(item.createdAt)}
                     </p>
                   </div>
                   <div className="flex shrink-0 gap-1">

@@ -1,8 +1,9 @@
 import { NextResponse, after } from "next/server";
 import { del } from "@vercel/blob";
 import { requireWorkspaceAccess } from "@/lib/auth";
-import { listAnalyses, createAnalysis, getAnalysisById, deleteAnalysis } from "@/lib/db";
+import { listAnalyses, createAnalysis, getAnalysisById, deleteAnalysis, failStaleAnalyses } from "@/lib/db";
 import { runAnalysis } from "@/lib/analysis-runner";
+import { isOwnWorkspaceBlobUrl, isVercelBlobUrl } from "@/lib/blob";
 
 // Gemini file processing + analysis + Claude can run a few minutes; the work
 // happens in after() within this invocation, so give it headroom.
@@ -15,6 +16,10 @@ export async function GET(request: Request) {
 
   const user = await requireWorkspaceAccess(workspaceId);
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  // Durably fail any analysis whose background job died mid-run, so it stops
+  // being reported as processing (and the client stops polling it).
+  await failStaleAnalyses(workspaceId);
 
   return NextResponse.json(await listAnalyses(workspaceId));
 }
@@ -30,6 +35,13 @@ export async function POST(request: Request) {
 
   const user = await requireWorkspaceAccess(body.workspaceId);
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  // The video must be one of THIS workspace's own blob objects (a fresh upload
+  // under analysis/<ws>/ or a footage/<ws>/ pick). This blocks server-side
+  // fetch of arbitrary/internal URLs (SSRF) and referencing another tenant's blob.
+  if (!isOwnWorkspaceBlobUrl(body.videoUrl, body.workspaceId)) {
+    return NextResponse.json({ error: "Invalid video URL" }, { status: 400 });
+  }
 
   const record = await createAnalysis({
     workspaceId: body.workspaceId,
@@ -57,9 +69,9 @@ export async function DELETE(request: Request) {
   const user = await requireWorkspaceAccess(record.workspaceId);
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  // Only delete the blob if it's one we own (uploaded videos live in our store;
-  // videos picked from Footage are shared and deleted with their Footage item).
-  if (record.videoUrl.includes(".blob.vercel-storage.com") && record.videoUrl.includes("/analysis/")) {
+  // Only delete blobs we uploaded for analysis (path analysis/<ws>/…). Videos
+  // picked from Footage are shared and deleted with their Footage item.
+  if (isVercelBlobUrl(record.videoUrl) && record.videoUrl.includes(`/analysis/${record.workspaceId}/`)) {
     try {
       await del(record.videoUrl);
     } catch {

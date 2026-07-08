@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FileText, Printer, Loader2, Sparkles } from "lucide-react";
 import { formatBytes } from "@/lib/footage";
+import { formatDate } from "@/lib/dates";
 import type { ReportData } from "@/lib/reports";
 
 function Stat({ label, value }: { label: string; value: number | string }) {
@@ -132,7 +133,7 @@ export function ReportsTab({ workspaceId }: { workspaceId: string }) {
             </div>
             <div className="text-right text-xs text-neutral-500">
               <p>{periodLabel}</p>
-              <p>Generated {new Date(report.generatedAt).toLocaleDateString()}</p>
+              <p>Generated {formatDate(report.generatedAt)}</p>
             </div>
           </div>
 

@@ -3,6 +3,7 @@ import { del } from "@vercel/blob";
 import { requireWorkspaceAccess } from "@/lib/auth";
 import { listFootage, createFootage, getFootageById, deleteFootage } from "@/lib/db";
 import { kindFromContentType, MAX_FOOTAGE_BYTES } from "@/lib/footage";
+import { isVercelBlobUrl, isOwnWorkspaceBlobUrl } from "@/lib/blob";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -24,9 +25,13 @@ export async function POST(request: Request) {
   const kind = kindFromContentType(body.contentType);
   if (!kind) return NextResponse.json({ error: "Unsupported file type" }, { status: 400 });
 
-  const sizeBytes = typeof body.sizeBytes === "number" ? body.sizeBytes : 0;
-  if (sizeBytes > MAX_FOOTAGE_BYTES) {
-    return NextResponse.json({ error: "File exceeds the size limit" }, { status: 400 });
+  const sizeBytes = typeof body.sizeBytes === "number" && Number.isFinite(body.sizeBytes) ? body.sizeBytes : -1;
+  if (sizeBytes < 0 || sizeBytes > MAX_FOOTAGE_BYTES) {
+    return NextResponse.json({ error: "Invalid or too-large file size" }, { status: 400 });
+  }
+  // The file must be one of THIS workspace's own uploaded blobs.
+  if (!isOwnWorkspaceBlobUrl(body.url, body.workspaceId)) {
+    return NextResponse.json({ error: "Invalid file URL" }, { status: 400 });
   }
 
   const user = await requireWorkspaceAccess(body.workspaceId);
@@ -55,7 +60,7 @@ export async function DELETE(request: Request) {
   const user = await requireWorkspaceAccess(item.workspaceId);
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  if (item.url.includes(".blob.vercel-storage.com")) {
+  if (isVercelBlobUrl(item.url)) {
     try {
       await del(item.url);
     } catch {

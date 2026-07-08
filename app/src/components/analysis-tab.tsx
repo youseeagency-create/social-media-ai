@@ -17,6 +17,7 @@ import {
   AlertCircle,
   Wand2,
 } from "lucide-react";
+import { parseDbTimestamp, formatDateTime } from "@/lib/dates";
 import type { Analysis, Footage } from "@/lib/types";
 
 const STALE_MS = 7 * 60 * 1000; // treat a processing record older than this as timed-out
@@ -61,7 +62,7 @@ export function AnalysisTab({ workspaceId }: { workspaceId: string }) {
   }, [analyses]);
 
   const isStale = (a: Analysis) =>
-    a.status === "processing" && Date.now() - new Date(a.createdAt).getTime() > STALE_MS;
+    a.status === "processing" && Date.now() - parseDbTimestamp(a.createdAt).getTime() > STALE_MS;
 
   const submit = async () => {
     setError("");
@@ -277,7 +278,7 @@ export function AnalysisTab({ workspaceId }: { workspaceId: string }) {
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold">{a.videoName}</p>
                         <p className="text-[11px] text-muted-foreground/60">
-                          {new Date(a.createdAt).toLocaleString()}
+                          {formatDateTime(a.createdAt)}
                         </p>
                       </div>
                       <button

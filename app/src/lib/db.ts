@@ -1,6 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { drizzle, type NeonHttpDatabase } from "drizzle-orm/neon-http";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import {
   users,
   workspaces,
@@ -322,6 +322,23 @@ export async function updateAnalysis(
 export async function deleteAnalysis(id: string): Promise<void> {
   if (!isUuid(id)) return;
   await db.delete(analyses).where(eq(analyses.id, id));
+}
+
+// Durably marks any analysis whose background job died (running past the
+// serverless budget) as failed, so it isn't reported as processing forever
+// and clients stop polling it. 6 min > the route's maxDuration of 300s.
+export async function failStaleAnalyses(workspaceId: string): Promise<void> {
+  if (!isUuid(workspaceId)) return;
+  await db
+    .update(analyses)
+    .set({ status: "failed", error: "Analysis timed out. Please retry." })
+    .where(
+      and(
+        eq(analyses.workspaceId, workspaceId),
+        eq(analyses.status, "processing"),
+        sql`${analyses.createdAt} < now() - interval '6 minutes'`
+      )
+    );
 }
 
 // Calendar items
