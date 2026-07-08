@@ -6,6 +6,9 @@ import { config } from "dotenv";
 config({ path: path.join(__dirname, "..", ".env") });
 
 const nextConfig: NextConfig = {
+  env: {
+    SESSION_SECRET: process.env.SESSION_SECRET,
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "**.cdninstagram.com" },

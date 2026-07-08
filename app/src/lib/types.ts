@@ -33,6 +33,39 @@ export interface Video {
   starred: boolean;
 }
 
+export type UserRole = "admin" | "client";
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  passwordHash: string;
+  passwordSalt: string;
+  createdAt: string;
+}
+
+export type PublicUser = Omit<User, "passwordHash" | "passwordSalt">;
+
+export interface Workspace {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface WorkspaceClient {
+  id: string;
+  workspaceId: string;
+  userId: string;
+  createdAt: string;
+}
+
+export interface SessionPayload {
+  userId: string;
+  role: UserRole;
+  exp: number;
+}
+
 export interface PipelineParams {
   configName: string;
   maxVideos: number;

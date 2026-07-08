@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Film, Play, Users, Settings2 } from "lucide-react";
+import { Film, Play, Users, Settings2, Building2 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -15,12 +15,14 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from "@/components/ui/sidebar";
+import { LogoutButton } from "@/components/logout-button";
 
 const navItems = [
   { title: "Videos", href: "/videos", icon: Film },
   { title: "Run Pipeline", href: "/run", icon: Play },
   { title: "Creators", href: "/creators", icon: Users },
   { title: "Configs", href: "/configs", icon: Settings2 },
+  { title: "Workspaces", href: "/admin", icon: Building2 },
 ];
 
 export function AppSidebar() {
@@ -76,13 +78,14 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      {lastRun && (
-        <SidebarFooter className="px-5 py-4">
+      <SidebarFooter className="gap-3 px-5 py-4">
+        {lastRun && (
           <p className="text-[11px] text-muted-foreground">
             Last pipeline: <span className="text-foreground/70">{lastRun}</span>
           </p>
-        </SidebarFooter>
-      )}
+        )}
+        <LogoutButton />
+      </SidebarFooter>
     </Sidebar>
   );
 }
