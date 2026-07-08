@@ -24,12 +24,15 @@ npm run dev
 - `GEMINI_API_KEY` — Google Gemini video analysis
 - `ANTHROPIC_API_KEY` — Claude concept generation
 - `SESSION_SECRET` — signs login session cookies (generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
+- `DATABASE_URL` — Postgres connection string (Neon, provisioned via Vercel's Marketplace integration; same DB used for local dev and production for now)
 
-**First-time setup** — bootstrap an admin account (safe to re-run, never touches configs/creators/videos data):
+**First-time setup**:
 ```bash
-# Set ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_NAME in .env, then:
 cd app
-npx tsx src/scripts/seed-auth.ts
+npx drizzle-kit generate   # only needed after changing src/lib/schema.ts
+npm run db:migrate         # applies drizzle/*.sql to DATABASE_URL
+# Set ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_NAME in .env, then:
+npx tsx src/scripts/seed-auth.ts   # safe to re-run — skips if the email already exists
 ```
 
 ---
@@ -38,7 +41,8 @@ npx tsx src/scripts/seed-auth.ts
 
 - **Next.js 16** (App Router) + **TypeScript**
 - **Tailwind CSS** + **shadcn/ui** components
-- **CSV files** for data storage (in `data/` directory)
+- **CSV files** for pipeline data storage (`configs`/`creators`/`videos`, in `data/` directory)
+- **Postgres (Neon)** via **Drizzle ORM** for auth/workspace data (`users`/`workspaces`/`workspace_clients`) — see "Multi-Client Platform" below
 - **Apify** — Instagram scraping
 - **Google Gemini 2.0 Flash** — Video analysis (upload + multimodal)
 - **Claude Sonnet** — New concept generation
@@ -66,15 +70,15 @@ npx tsx src/scripts/seed-auth.ts
 
 ## Multi-Client Platform (Auth + Workspaces)
 
-This is being built out in stages into a multi-client platform. Stage 1 (done) adds authentication and a workspace shell; feature logic inside workspace tabs comes in later stages.
+This is being built out in stages into a multi-client platform. Stage 1 added authentication and a workspace shell (CSV-backed); that was then migrated to Postgres since Vercel's filesystem is read-only/ephemeral. Feature logic inside workspace tabs comes in later stages. `configs`/`creators`/`videos` are still CSV-backed — only the auth/workspace entities moved to the database.
 
 - **Two account types**: `admin` (sees/manages everything) and `client` (sees only their assigned workspace(s)).
 - **Auth**: email/password login, sessions are signed HTTP-only cookies (`app/src/lib/session.ts`, Web Crypto HMAC — no auth library dependency). Password hashing via Node's `crypto.scrypt` (`app/src/lib/password.ts`). Route protection is centralized in `app/src/proxy.ts` (Next.js's `middleware.ts` convention, renamed to `proxy.ts` in Next 16 — must live in `src/` alongside `app/`, not at the project root).
 - **Admin-only pages**: `/`, `/videos`, `/run`, `/configs`, `/creators`, `/admin` (and their API routes) all require an admin session. Non-admin/unauthenticated requests are redirected (pages) or get 401/403 JSON (API).
 - **Admin dashboard** (`/admin`): create/rename/delete workspaces, create client accounts, assign clients to workspaces.
-- **Workspace shell** (`/workspace/[workspaceId]/...`): 6 tabs — Inspiration, Notes, Footage, Analysis, Content Calendar, Reports — currently all placeholders. Per-workspace access is checked in `app/src/app/workspace/[workspaceId]/layout.tsx` against the `workspace_clients.csv` join table (admins bypass this check).
-- **Data**: `data/users.csv`, `data/workspaces.csv`, `data/workspace_clients.csv` — same CSV read/write convention as everything else, via `app/src/lib/csv.ts`.
-- **Bootstrapping the first admin**: `app/src/scripts/seed-auth.ts` (see "First-time setup" above). Kept separate from `app/src/scripts/seed.ts`, which unconditionally overwrites `configs.csv`/`creators.csv`/`videos.csv` and should only ever be run on a fresh install.
+- **Workspace shell** (`/workspace/[workspaceId]/...`): 6 tabs — Inspiration, Notes, Footage, Analysis, Content Calendar, Reports — currently all placeholders. Per-workspace access is checked in `app/src/app/workspace/[workspaceId]/layout.tsx` via `isUserAssignedToWorkspace` (admins bypass this check).
+- **Data**: Postgres tables `users`, `workspaces`, `workspace_clients` (schema in `app/src/lib/schema.ts`, queries in `app/src/lib/db.ts`). `workspace_clients` has real foreign keys with `ON DELETE CASCADE` — deleting a workspace or user automatically cleans up assignment rows. Schema changes: edit `schema.ts`, run `npx drizzle-kit generate` (writes SQL to `app/drizzle/`, commit it), then `npm run db:migrate`.
+- **Bootstrapping the first admin**: `npx tsx src/scripts/seed-auth.ts` (see "First-time setup" above) — idempotent, skips if `ADMIN_EMAIL` already exists in the DB. Unrelated to `app/src/scripts/seed.ts`, which unconditionally overwrites `configs.csv`/`creators.csv`/`videos.csv` and should only ever be run on a fresh install.
 
 ---
 
@@ -106,21 +110,26 @@ This is being built out in stages into a multi-client platform. Stage 1 (done) a
 │   │   │   ├── apify.ts                  # Apify scraper client
 │   │   │   ├── gemini.ts                 # Gemini video analysis client
 │   │   │   ├── claude.ts                 # Claude concept generation client
-│   │   │   ├── csv.ts                    # CSV read/write utilities
+│   │   │   ├── csv.ts                    # CSV read/write utilities (configs/creators/videos only)
+│   │   │   ├── schema.ts                 # Drizzle Postgres schema (users/workspaces/workspace_clients)
+│   │   │   ├── db.ts                     # Drizzle client + query functions
 │   │   │   ├── media.ts                  # Downloads Instagram CDN images and stores them locally
 │   │   │   ├── session.ts                # Signed session cookie create/verify (Web Crypto)
 │   │   │   ├── password.ts               # Password hashing (scrypt)
 │   │   │   ├── auth.ts                   # getCurrentUser/setSessionCookie helpers
-│   │   │   └── types.ts                  # TypeScript interfaces
+│   │   │   └── types.ts                  # TypeScript interfaces (User/Workspace/WorkspaceClient re-exported from schema.ts)
+│   │   ├── scripts/
+│   │   │   ├── seed.ts                   # Fresh-install seed for configs/creators/videos (destructive, run once)
+│   │   │   ├── seed-auth.ts              # Idempotent admin bootstrap (Postgres)
+│   │   │   └── migrate.ts                # Applies drizzle/*.sql to DATABASE_URL
 │   │   └── components/                    # UI components (shadcn + custom)
+│   ├── drizzle/                           # Generated SQL migrations (committed)
+│   ├── drizzle.config.ts                  # drizzle-kit config
 │   └── package.json
-├── data/                                  # CSV data storage
+├── data/                                  # CSV data storage (pipeline entities only — auth/workspaces are in Postgres)
 │   ├── configs.csv                        # Pipeline configurations
 │   ├── creators.csv                       # Instagram creator accounts
 │   ├── videos.csv                         # Analyzed video results
-│   ├── users.csv                          # Admin/client accounts
-│   ├── workspaces.csv                     # Client workspaces
-│   ├── workspace_clients.csv              # Workspace <-> client assignment (join table)
 │   └── media/                             # Locally cached thumbnails/avatars (served via /api/media/*)
 ├── context/                               # Background context for Claude
 ├── plans/                                 # Implementation plans

@@ -1,7 +1,6 @@
 /**
- * Bootstraps the auth/workspace data files. Safe to re-run: only ever adds
- * an admin account if one with the same email doesn't already exist, and
- * never touches configs.csv / creators.csv / videos.csv.
+ * Bootstraps the admin account in Postgres. Safe to re-run: only ever adds
+ * an admin account if one with the same email doesn't already exist.
  * Run with: npx tsx src/scripts/seed-auth.ts
  */
 import path from "path";
@@ -9,16 +8,8 @@ import { config as loadEnv } from "dotenv";
 
 loadEnv({ path: path.join(__dirname, "..", "..", "..", ".env") });
 
-import { v4 as uuid } from "uuid";
 import { hashPassword } from "../lib/password";
-import {
-  readUsers,
-  writeUsers,
-  readWorkspaces,
-  writeWorkspaces,
-  readWorkspaceClients,
-  writeWorkspaceClients,
-} from "../lib/csv";
+import { getUserByEmail, createUser } from "../lib/db";
 
 async function main() {
   const { ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_NAME } = process.env;
@@ -28,27 +19,20 @@ async function main() {
     return;
   }
 
-  const users = readUsers();
-  if (users.some((u) => u.email.toLowerCase() === ADMIN_EMAIL.toLowerCase())) {
+  const existing = await getUserByEmail(ADMIN_EMAIL);
+  if (existing) {
     console.log(`User ${ADMIN_EMAIL} already exists, skipping.`);
   } else {
     const { hash, salt } = await hashPassword(ADMIN_PASSWORD);
-    users.push({
-      id: uuid(),
+    await createUser({
       email: ADMIN_EMAIL,
       name: ADMIN_NAME,
       role: "admin",
       passwordHash: hash,
       passwordSalt: salt,
-      createdAt: new Date().toISOString(),
     });
-    writeUsers(users);
     console.log(`Created admin account: ${ADMIN_EMAIL}`);
   }
-
-  // Ensure workspaces.csv / workspace_clients.csv exist (created header-only if missing).
-  writeWorkspaces(readWorkspaces());
-  writeWorkspaceClients(readWorkspaceClients());
 
   console.log("Auth seed complete!");
 }

@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
-import { v4 as uuid } from "uuid";
-import { readWorkspaceClients, writeWorkspaceClients } from "@/lib/csv";
-import type { WorkspaceClient } from "@/lib/types";
+import {
+  listWorkspaceClients,
+  getWorkspaceClientByPair,
+  createWorkspaceClient,
+  deleteWorkspaceClientById,
+  deleteWorkspaceClientByPair,
+} from "@/lib/db";
 
 export async function GET() {
-  return NextResponse.json(readWorkspaceClients());
+  return NextResponse.json(await listWorkspaceClients());
 }
 
 export async function POST(request: Request) {
@@ -13,19 +17,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "workspaceId and userId required" }, { status: 400 });
   }
 
-  const links = readWorkspaceClients();
-  if (links.some((l) => l.workspaceId === body.workspaceId && l.userId === body.userId)) {
+  const existing = await getWorkspaceClientByPair(body.workspaceId, body.userId);
+  if (existing) {
     return NextResponse.json({ error: "Already assigned" }, { status: 409 });
   }
 
-  const newLink: WorkspaceClient = {
-    id: uuid(),
-    workspaceId: body.workspaceId,
-    userId: body.userId,
-    createdAt: new Date().toISOString(),
-  };
-  links.push(newLink);
-  writeWorkspaceClients(links);
+  const newLink = await createWorkspaceClient(body.workspaceId, body.userId);
   return NextResponse.json(newLink, { status: 201 });
 }
 
@@ -35,15 +32,13 @@ export async function DELETE(request: Request) {
   const workspaceId = searchParams.get("workspaceId");
   const userId = searchParams.get("userId");
 
-  let links = readWorkspaceClients();
   if (id) {
-    links = links.filter((l) => l.id !== id);
+    await deleteWorkspaceClientById(id);
   } else if (workspaceId && userId) {
-    links = links.filter((l) => !(l.workspaceId === workspaceId && l.userId === userId));
+    await deleteWorkspaceClientByPair(workspaceId, userId);
   } else {
     return NextResponse.json({ error: "id or (workspaceId and userId) required" }, { status: 400 });
   }
 
-  writeWorkspaceClients(links);
   return NextResponse.json({ success: true });
 }

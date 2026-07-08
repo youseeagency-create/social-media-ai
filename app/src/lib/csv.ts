@@ -2,7 +2,7 @@ import { parse } from "csv-parse/sync";
 import { stringify } from "csv-stringify/sync";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 import path from "path";
-import type { Config, Creator, Video, User, Workspace, WorkspaceClient } from "./types";
+import type { Config, Creator, Video } from "./types";
 
 const DATA_DIR = path.join(process.cwd(), "..", "data");
 
@@ -89,37 +89,4 @@ export function appendVideo(video: Video) {
   const videos = readVideos();
   videos.push(video);
   writeVideos(videos);
-}
-
-// Users
-const USER_COLUMNS = ["id", "email", "name", "role", "passwordHash", "passwordSalt", "createdAt"];
-
-export function readUsers(): User[] {
-  return readCsv<User>("users.csv");
-}
-
-export function writeUsers(users: User[]) {
-  writeCsv("users.csv", users as unknown as Record<string, unknown>[], USER_COLUMNS);
-}
-
-// Workspaces
-const WORKSPACE_COLUMNS = ["id", "name", "createdAt"];
-
-export function readWorkspaces(): Workspace[] {
-  return readCsv<Workspace>("workspaces.csv");
-}
-
-export function writeWorkspaces(workspaces: Workspace[]) {
-  writeCsv("workspaces.csv", workspaces as unknown as Record<string, unknown>[], WORKSPACE_COLUMNS);
-}
-
-// Workspace-Client assignments
-const WORKSPACE_CLIENT_COLUMNS = ["id", "workspaceId", "userId", "createdAt"];
-
-export function readWorkspaceClients(): WorkspaceClient[] {
-  return readCsv<WorkspaceClient>("workspace_clients.csv");
-}
-
-export function writeWorkspaceClients(links: WorkspaceClient[]) {
-  writeCsv("workspace_clients.csv", links as unknown as Record<string, unknown>[], WORKSPACE_CLIENT_COLUMNS);
 }

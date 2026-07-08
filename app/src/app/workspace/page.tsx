@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
-import { readWorkspaces, readWorkspaceClients } from "@/lib/csv";
+import { listWorkspacesForUser } from "@/lib/db";
 import { LogoutButton } from "@/components/logout-button";
 import { Building2 } from "lucide-react";
 
@@ -10,8 +10,7 @@ export default async function WorkspacePickerPage() {
   if (!user) redirect("/login");
   if (user.role === "admin") redirect("/admin");
 
-  const myLinks = readWorkspaceClients().filter((l) => l.userId === user.id);
-  const workspaces = readWorkspaces().filter((w) => myLinks.some((l) => l.workspaceId === w.id));
+  const workspaces = await listWorkspacesForUser(user.id);
 
   if (workspaces.length === 1) {
     redirect(`/workspace/${workspaces[0].id}/inspiration`);

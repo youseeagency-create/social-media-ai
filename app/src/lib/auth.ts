@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { createSessionToken, verifySessionToken, SESSION_COOKIE_NAME } from "./session";
-import { readUsers } from "./csv";
+import { getUserById } from "./db";
 import type { User, UserRole, SessionPayload } from "./types";
 
 export async function getSession(): Promise<SessionPayload | null> {
@@ -11,7 +11,7 @@ export async function getSession(): Promise<SessionPayload | null> {
 export async function getCurrentUser(): Promise<User | null> {
   const session = await getSession();
   if (!session) return null;
-  return readUsers().find((u) => u.id === session.userId) ?? null;
+  return getUserById(session.userId);
 }
 
 export async function setSessionCookie(payload: { userId: string; role: UserRole }): Promise<void> {

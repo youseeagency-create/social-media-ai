@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { readUsers } from "@/lib/csv";
+import { getUserByEmail } from "@/lib/db";
 import { verifyPassword } from "@/lib/password";
 import { setSessionCookie } from "@/lib/auth";
 
@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "email and password required" }, { status: 400 });
   }
 
-  const user = readUsers().find((u) => u.email.toLowerCase() === String(email).toLowerCase());
+  const user = await getUserByEmail(String(email));
   if (!user || !(await verifyPassword(password, user.passwordHash, user.passwordSalt))) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }

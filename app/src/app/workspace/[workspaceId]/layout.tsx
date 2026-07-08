@@ -1,6 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { readWorkspaces, readWorkspaceClients } from "@/lib/csv";
+import { getWorkspaceById, isUserAssignedToWorkspace } from "@/lib/db";
 import { WorkspaceTabs } from "@/components/workspace-tabs";
 import { LogoutButton } from "@/components/logout-button";
 
@@ -15,13 +15,11 @@ export default async function WorkspaceLayout({
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const workspace = readWorkspaces().find((w) => w.id === workspaceId);
+  const workspace = await getWorkspaceById(workspaceId);
   if (!workspace) notFound();
 
   if (user.role !== "admin") {
-    const allowed = readWorkspaceClients().some(
-      (l) => l.workspaceId === workspaceId && l.userId === user.id
-    );
+    const allowed = await isUserAssignedToWorkspace(workspaceId, user.id);
     if (!allowed) notFound();
   }
 
